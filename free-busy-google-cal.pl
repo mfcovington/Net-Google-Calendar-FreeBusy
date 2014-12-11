@@ -46,16 +46,23 @@ EOF
     $req->content($post_data);
 
     my $response = $ua->request($req);
+    my $message = $response->decoded_content;
+    my $decoded = decode_json $message;
+
     my $busy_times;
 
     if ( $response->is_success ) {
-        my $message = $response->decoded_content;
-        my $decoded = decode_json $message;
         $busy_times = $$decoded{calendars}{$cal_id}{busy};
     }
     else {
         warn "HTTP POST error code: ",    $response->code,    "\n";
         warn "HTTP POST error message: ", $response->message, "\n";
+
+        for my $error ( @{ $$decoded{error}{errors} } ) {
+            warn "Error domain: ",  $$error{domain},  "\n";
+            warn "Error reason: ",  $$error{reason},  "\n";
+            warn "Error message: ", $$error{message}, "\n";
+        }
     }
 
     return $busy_times;    # times come from Google as GMT/UTC
